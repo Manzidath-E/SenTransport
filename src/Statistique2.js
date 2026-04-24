@@ -1,0 +1,10 @@
+function Statistique2() {
+  return (
+    <div className="statistique">
+      <h2>150</h2>
+      <p>Arrêts</p>
+    </div>
+  );
+}
+
+export default Statistique2;
