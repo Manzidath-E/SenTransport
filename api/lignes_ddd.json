@@ -44,5 +44,39 @@
     "arrets": 11,
     "listeArrets": ["Yoff Village", "Aeroport LSS",
       "Parcelles U17", "Grand Yoff", "HLM", "Sandaga"]
-  }
+  },
+  {
+  "id": 7,
+  "numero": "31",
+  "depart": "Guediawaye",
+  "arrivee": "UCAD",
+  "arrets": 8,
+  "listeArrets": [
+    "Guediawaye",
+    "Sam Notaire",
+    "Camberene",
+    "Mariste",
+    "Liberte 5",
+    "Fann",
+    "UCAD"
+  ]
+},
+{
+  "id": 8,
+  "numero": "42",
+  "depart": "Pikine",
+  "arrivee": "Plateau",
+  "arrets": 8,
+  "listeArrets": [
+    "Pikine",
+    "Thiaroye",
+    "Dalifort",
+    "Biscuiterie",
+    "Hann",
+    "Colobane",
+    "Sandaga",
+    "Plateau"
+  ]
+}
 ]
+  
