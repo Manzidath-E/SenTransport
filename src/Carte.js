@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Carte.css';
@@ -11,6 +11,7 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
+
 
 // Calculer la distance entre 2 points GPS (km)
 function calculerDistance(lat1, lon1, lat2, lon2) {
@@ -26,11 +27,52 @@ function calculerDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+function BoutonCentrer({ position }) {
+  const map = useMap();
+  if (!position) return null;
+  return (
+    <button
+      className="btn-centrer"
+      onClick={() => map.setView(position, 15)}
+      style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1000,
+        padding: '8px 16px',
+        backgroundColor: '#2c3e50',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer'
+      }}
+    >
+      Centrer sur ma position
+    </button>
+  );
+}
+
 function Carte() {
   const [arrets, setArrets] = useState([]);
   const [positionUtilisateur, setPositionUtilisateur] = useState(null);
-  const [arretProche, setArretProche] = useState(null);
+  const [arretsProches, setArretsProches] = useState([]);
   const DAKAR = [14.6928, -17.4467];
+
+  const iconeOrange = L.divIcon({
+  className: '',
+  html: `<div style="
+    width: 25px;
+    height: 41px;
+    background-color: orange;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid white;
+  "></div>`,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+});
 
   // Charger les arrets depuis Flask
   useEffect(() => {
@@ -55,49 +97,62 @@ function Carte() {
     }
   }, []);
 
-  // Trouver l'arret le plus proche
-  useEffect(() => {
-    if (positionUtilisateur && arrets.length > 0) {
-      let proche = null;
-      let dMin = Infinity;
-      arrets.forEach(a => {
-        const d = calculerDistance(
-          positionUtilisateur[0],
-          positionUtilisateur[1], a.lat, a.lon);
-        if (d < dMin) { dMin = d; proche = { ...a, distance: d }; }
-      });
-      setArretProche(proche);
-    }
-  }, [positionUtilisateur, arrets]);
+  
+ // Trouver les 3 arrets les plus proches
+useEffect(() => {
+  if (positionUtilisateur && arrets.length > 0) {
+    const arretsAvecDistance = arrets.map(a => ({
+      ...a,
+      distance: calculerDistance(
+        positionUtilisateur[0],
+        positionUtilisateur[1], a.lat, a.lon)
+    }));
+    const tries = arretsAvecDistance.sort((a, b) => a.distance - b.distance);
+    setArretsProches(tries.slice(0, 3));
+  }
+}, [positionUtilisateur, arrets]);
 
   return (
     <div className="carte-container">
       <h2 className="carte-titre">Carte des arrets</h2>
-      {arretProche && (
-        <p className="arret-proche">
-          Arret le plus proche :
-          <strong> {arretProche.nom} </strong>
-          ({arretProche.distance.toFixed(1)} km)
-        </p>
-      )}
+     {arretsProches.length > 0 && (
+  <div className="arret-proche">
+    <strong>Les 3 arrêts les plus proches :</strong>
+    <ul>
+      {arretsProches.map((a, index) => (
+        <li key={a.id}>
+          {index + 1}. {a.nom} — {a.distance.toFixed(1)} km
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
       <MapContainer center={DAKAR} zoom={13} className="carte">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap"
         />
-        {arrets.map(a => (
-          <Marker key={a.id} position={[a.lat, a.lon]}>
-            <Popup>
-              <strong>{a.nom}</strong><br />
-              Lignes : {a.lignes.join(", ")}
-            </Popup>
-          </Marker>
-        ))}
+        {arrets.map(a => {
+ const estLeProche = arretsProches.length > 0 && arretsProches[0].id === a.id;
+  return (
+    <Marker
+      key={a.id}
+      position={[a.lat, a.lon]}
+      {...(estLeProche ? { icon: iconeOrange } : {})}
+    >
+      <Popup>
+        <strong>{a.nom}</strong><br />
+        Lignes : {a.lignes.join(", ")}
+      </Popup>
+    </Marker>
+  );
+})}
         {positionUtilisateur && (
           <Marker position={positionUtilisateur}>
             <Popup>Vous etes ici</Popup>
           </Marker>
         )}
+        <BoutonCentrer position={positionUtilisateur} />
       </MapContainer>
     </div>
   );
